@@ -4,5 +4,5 @@ class Organism:
             self.positionY = positionY
             self.strength = strength
             self.innitiative = innitiative
-            #self.index
-            #self.isDead
+            self.index = 0
+            self.isDead = True
