@@ -5,3 +5,5 @@ class Grass(plant.Plant):
             super(Grass, self).__init__(positionX, positionY, 0)
     def displayChar(self):
         return "^"
+    def name(self):
+        return "Grass"

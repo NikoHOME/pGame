@@ -7,6 +7,9 @@ class Plant(organism.Organism):
 
     def __init__(self, positionX, positionY, strength):
             super(Plant, self).__init__(positionX, positionY, strength, 0)
+
+    def reproduceMessage(self):
+        return "sprouted"
     def action(self):
         self.basicGrowHandle()
     def collision(self):
@@ -42,7 +45,6 @@ class Plant(organism.Organism):
 
         if(len(emptyCells) == 0):
             return True
-        print(f"{len(emptyCells)} {len(directions)} {self.__class__}")
 
             
         direction = emptyCells[random.randint(0, len(emptyCells)-1)]

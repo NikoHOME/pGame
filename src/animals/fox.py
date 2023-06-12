@@ -6,6 +6,8 @@ class Fox(animal.Animal):
 
     def displayChar(self):
         return "F"
+    def name(self):
+        return "Fox"
 
     def action(self):
         from ..functions import Vector2

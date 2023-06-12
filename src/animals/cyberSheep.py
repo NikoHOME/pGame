@@ -5,3 +5,5 @@ class CyberSheep(animal.Animal):
         super(CyberSheep, self).__init__(positionX, positionY, 11, 4)
     def displayChar(self):
         return "C"
+    def name(self):
+        return "Cyber Sheep"

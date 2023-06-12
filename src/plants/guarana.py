@@ -5,6 +5,8 @@ class Guarana(plant.Plant):
             super(Guarana, self).__init__(positionX, positionY, 0)
     def displayChar(self):
         return "G"
+    def name(self):
+        return "Guarana"
 
     def collision(self):
         from ..functions import CollisionAction

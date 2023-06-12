@@ -5,9 +5,11 @@ class Antilope(animal.Animal):
         super(Antilope, self).__init__(positionX, positionY, 4, 4)
     def displayChar(self):
         return "A"
-
+    def name(self):
+        return "Antilope"
     def action(self):
         self.basicMovementHandle()
         self.basicCollisionHandle()
         #TODO
+
     

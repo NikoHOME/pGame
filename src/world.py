@@ -34,15 +34,36 @@ class World:
         self._directions.append(Vector2(-1, 0))
 
         self._directionsDiagonal = []
-        self._directions.append(Vector2(-1, -1))
-        self._directions.append(Vector2(-1, 1))
-        self._directions.append(Vector2(1, -1))
-        self._directions.append(Vector2(1, 1))
+        self._directionsDiagonal.append(Vector2(-1, -1))
+        self._directionsDiagonal.append(Vector2(-1, 1))
+        self._directionsDiagonal.append(Vector2(1, -1))
+        self._directionsDiagonal.append(Vector2(1, 1))
 
         self._player = None
+        self._playerAbilityOn = False
+        self._playerAbilityAvaible = True
+        self._playerAbilityDuration = 5
+        self._playerAbilityDelay = 10
+        self._playerAbilityTimeUsed = -10
+        self._turn = 0
         
         self.populate_world()
+    def playerAbilityTimeLeft(self):
+        if(self._playerAbilityTimeUsed + self._playerAbilityDuration < self._turn):
+            return 1
+        else:
+            return self._playerAbilityTimeUsed + self._playerAbilityDuration - self._turn
 
+    def playerAbilityAvaible(self, newValue = None):
+        if(newValue == None):
+            return self._playerAbilityAvaible
+        else:
+            self._playerAbilityAvaible = newValue
+    def playerAbilityOn(self, newValue = None):
+        if(newValue == None):
+            return self._playerAbilityOn
+        else:
+            self._playerAbilityOn = newValue
     def height(self):
         return self._height
     def width(self):
@@ -85,6 +106,16 @@ class World:
         self.update()
 
     def update(self):
+        self._turn += 1
+
+        if(self._playerAbilityTimeUsed + self._playerAbilityDelay < self._turn):
+            self._playerAbilityAvaible = True
+        else:
+            self._playerAbilityAvaible = False
+        
+        if(self._playerAbilityTimeUsed + self._playerAbilityDuration < self._turn):
+            self._playerAbilityOn = False
+
         if(self._player != None):
             if(self._board[self._player.positionX()][self._player.positionY()] != self._player):
                 self._player = None

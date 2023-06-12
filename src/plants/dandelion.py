@@ -5,6 +5,8 @@ class Dandelion(plant.Plant):
             super(Dandelion, self).__init__(positionX, positionY, 0)
     def displayChar(self):
         return "D"
+    def name(self):
+        return "Dandelion"
     def action(self):
         for i in range(0, 3): # 3 Tries to grow
             if(self.basicGrowHandle() == True):

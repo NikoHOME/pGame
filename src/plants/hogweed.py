@@ -5,6 +5,9 @@ class Hogweed(plant.Plant):
             super(Hogweed, self).__init__(positionX, positionY, 10)   
     def displayChar(self):
         return "H"
+    def name(self):
+        return "Hogweed"
+        
     def collision(self):
         from ..functions import CollisionAction
         action = CollisionAction()

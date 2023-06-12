@@ -5,3 +5,5 @@ class Sheep(animal.Animal):
         super(Sheep, self).__init__(positionX, positionY, 4, 4)
     def displayChar(self):
         return "S"
+    def name(self):
+        return "Sheep"

@@ -5,3 +5,5 @@ class Wolf(animal.Animal):
         super(Wolf, self).__init__(positionX, positionY, 9, 5)
     def displayChar(self):
         return "W"
+    def name(self):
+        return "Wolf"

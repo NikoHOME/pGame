@@ -5,7 +5,8 @@ class Belladona(plant.Plant):
             super(Belladona, self).__init__(positionX, positionY, 99)
     def displayChar(self):
         return "B"
-    
+    def name(self):
+        return "Belladona"
     def collision(self):
         from ..functions import CollisionAction
         action = CollisionAction()

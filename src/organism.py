@@ -1,6 +1,7 @@
 import abc
 
 
+
 class Organism(abc.ABC):
     def __init__(self, positionX, positionY, strength, innitiative):
             self._positionX = positionX
@@ -13,10 +14,16 @@ class Organism(abc.ABC):
             from .functions import Vector2
             self._move = Vector2(0,0)
 
-    def positionX(self):
-        return self._positionX
-    def positionY(self):
-        return self._positionY
+    def positionX(self, newValue = None):
+        if(newValue != None):
+            self._positionX = newValue
+        else:
+            return self._positionX
+    def positionY(self, newValue = None):
+        if(newValue != None):
+            self._positionY = newValue
+        else:
+            return self._positionY
     def strength(self, newValue = None):
         if(newValue != None):
             self._strength = newValue
@@ -39,6 +46,11 @@ class Organism(abc.ABC):
             self._world = newValue
         else:
             return self._world
+    def move(self, newValue = None):
+        if(newValue != None):
+            self._move = newValue
+        else:
+            return self._move
 
     @abc.abstractmethod
     def action(self):
@@ -49,6 +61,18 @@ class Organism(abc.ABC):
     @abc.abstractmethod
     def displayChar(self):
         ...
+
+    @abc.abstractmethod
+    def name(self):
+        ...
+
+    @abc.abstractmethod
+    def reproduceMessage(self):
+        ...
+
+
+    def killMessage(self):
+        return "killed"
 
     def moveOrganism(self, x, y):
         self.world().board()[x][y] = self
@@ -62,6 +86,7 @@ class Organism(abc.ABC):
 
     def reproduce(self, x, y):
         newOrganism = self.__class__(x, y)
+        self.world().manager().addMessage(newOrganism.name() + " " + newOrganism.reproduceMessage())
         self._world.add_organism(newOrganism)
 
     def setAction(self, action, thisCollision, otherCollision):
@@ -114,11 +139,12 @@ class Organism(abc.ABC):
 
                 # message1.addToList( otherOrganism.getClass().getSimpleName());
                 # message2.addToList( thisOrganism.getClass().getSimpleName());
-                #TODO
+
 
                 # world.manager().pushMessage(message1);
                 # world.manager().pushMessage(message2);
-                
+                self.world().manager().addMessage(thisOrganism.name() + " " + thisOrganism.killMessage()  + " " + otherOrganism.name()  )
+                self.world().manager().addMessage(otherOrganism.name() + " " + otherOrganism.killMessage()  + " " + thisOrganism.name()  )
 
                 thisOrganism.die()
                 otherOrganism.die()
@@ -128,9 +154,8 @@ class Organism(abc.ABC):
             # message.addToList(thisOrganism.getClass().getSimpleName()); 
             # message.addToList(thisOrganism.getKillMessage());
             # message.addToList(otherOrganism.getClass().getSimpleName());
-
+            self.world().manager().addMessage(thisOrganism.name() + " " + thisOrganism.killMessage()  + " " + otherOrganism.name()  )
             # world.manager().pushMessage(message);
-            #TODO
             
             newPosX = otherOrganism.positionX()
             newPosY = otherOrganism.positionY()
@@ -182,9 +207,9 @@ class Organism(abc.ABC):
             # message.addToList(otherOrganism.getClass().getSimpleName()); 
             # message.addToList(otherOrganism.getKillMessage());
             # message.addToList(thisOrganism.getClass().getSimpleName());
-
+            self.world().manager().addMessage(otherOrganism.name() + " " + otherOrganism.killMessage()  + " " + thisOrganism.name()  )
             #world.manager().pushMessage(message);
-            # TODO
+            
             thisOrganism.die()
         
     

@@ -5,7 +5,8 @@ class Turtle(animal.Animal):
         super(Turtle, self).__init__(positionX, positionY, 2, 1)
     def displayChar(self):
         return "T"
-    
+    def name(self):
+        return "Turtle"
     def action(self):
         import random
         from datetime import datetime

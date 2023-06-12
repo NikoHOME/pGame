@@ -4,7 +4,8 @@ from .organism import Organism
 class Animal(Organism):
     def __init__(self, positionX, positionY, strength, innitiative):
         super(Animal, self).__init__(positionX, positionY, strength, innitiative)
-    
+    def reproduceMessage(self):
+        return "was born"
     def action(self):
         self.basicMovementHandle()
         self.basicCollisionHandle()
@@ -115,7 +116,7 @@ class Animal(Organism):
                 if(otherCell == thisCell):
                     finalCells.append(Vector2(thisCell.x, thisCell.y))
 
-        print(len(finalCells))
+        #print(len(finalCells))
 
         if(len(finalCells) == 0):
             return True
