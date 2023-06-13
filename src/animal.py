@@ -15,25 +15,12 @@ class Animal(Organism):
         output = CollisionAction()
         output.realStrength = self.strength()
         return output
-    
-    def basicMovementHandle(self):
-        from .functions import Vector2
-        import random
-        from datetime import datetime
-        random.seed(datetime.now().timestamp())
-        directions = self.world().directions()
-        #Randomize a direction;
-        direction = directions[random.randint(0, len(directions)-1)] 
 
-        coordinate = Vector2(0, 0)
-        coordinate.x = self._positionX + direction.x
-        coordinate.y = self._positionY + direction.y
-        
-        #Find a valid cell
-        while(not self.world().isInBounds(coordinate)):
-            direction = directions[random.randint(0, len(directions)-1)] 
-            coordinate.x = self._positionX + direction.x
-            coordinate.y = self._positionY + direction.y
+    
+
+    def basicMovementHandle(self):
+
+        coordinate = self.pickRandomCell()
 
         self._move.x = coordinate.x
         self._move.y = coordinate.y
@@ -49,16 +36,14 @@ class Animal(Organism):
         if(self.reproduceAnimal(otherOrganism)):
             return
  
-
         thisCollision = self.collision()
         otherCollision = otherOrganism.collision()
         
         if(thisCollision.escaped == True):
             return
 
-
         if(otherCollision.escaped == True):
-            moveOrganism(self._move.x, self._move.y)
+            self.moveOrganism(self._move.x, self._move.y)
             return
         
         thisOrganism.killIfStronger(otherOrganism, thisCollision, otherCollision)

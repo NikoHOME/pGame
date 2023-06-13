@@ -21,7 +21,7 @@ import random
 
 class World:
     index = 0
-    def __init__(self, width, height, manager):
+    def __init__(self, width, height, manager, populateFlag = True):
         self._height = height
         self._width = width
         self._manager = manager
@@ -40,14 +40,15 @@ class World:
         self._directionsDiagonal.append(Vector2(1, 1))
 
         self._player = None
+        self._playerAlive = True
         self._playerAbilityOn = False
         self._playerAbilityAvaible = True
         self._playerAbilityDuration = 5
         self._playerAbilityDelay = 10
         self._playerAbilityTimeUsed = -10
         self._turn = 0
-        
-        self.populate_world()
+        if(populateFlag):
+            self.populate_world()
     def playerAbilityTimeLeft(self):
         if(self._playerAbilityTimeUsed + self._playerAbilityDuration < self._turn):
             return 1
@@ -64,6 +65,13 @@ class World:
             return self._playerAbilityOn
         else:
             self._playerAbilityOn = newValue
+    def playerAlive(self):
+        return self._playerAlive
+    def turn(self, newValue = None):
+        if(newValue == None):
+            return self._turn
+        else:
+            self._turn = newValue
     def height(self):
         return self._height
     def width(self):
@@ -105,20 +113,30 @@ class World:
         self.board()[organism.positionX()][organism.positionY()] = organism
         self.update()
 
+    def playerUseAbility(self):
+        self._playerAbilityOn = True
+        self._playerAbilityTimeUsed = self._turn
+        self._playerAbilityAvaible = False
+    def nextTurn(self):
+        self._turn +=1
     def update(self):
-        self._turn += 1
+        if(self._player != None):
+            if(self._board[self._player.positionX()][self._player.positionY()] != self._player):
+                self._player = None
+                self._playerAlive = False
+                self._playerAbilityTimeUsed = -10
+            else:
+                self._playerAlive = True
+        else:
+            self._playerAlive = False
 
-        if(self._playerAbilityTimeUsed + self._playerAbilityDelay < self._turn):
+        if(self._playerAbilityTimeUsed + self._playerAbilityDelay <= self._turn):
             self._playerAbilityAvaible = True
         else:
             self._playerAbilityAvaible = False
         
         if(self._playerAbilityTimeUsed + self._playerAbilityDuration < self._turn):
             self._playerAbilityOn = False
-
-        if(self._player != None):
-            if(self._board[self._player.positionX()][self._player.positionY()] != self._player):
-                self._player = None
 
     def populate_world(self):
         emptyList = []

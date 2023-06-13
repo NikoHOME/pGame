@@ -69,7 +69,8 @@ class Organism(abc.ABC):
     @abc.abstractmethod
     def reproduceMessage(self):
         ...
-
+    def displayColour(self):
+        return (255, 255, 255, 255)
 
     def killMessage(self):
         return "killed"
@@ -89,7 +90,30 @@ class Organism(abc.ABC):
         self.world().manager().addMessage(newOrganism.name() + " " + newOrganism.reproduceMessage())
         self._world.add_organism(newOrganism)
 
+    def pickRandomCell(self):
+        from .functions import Vector2
+        import random
+        from datetime import datetime
+        random.seed(datetime.now().timestamp())
+
+        directions = self.world().directions()
+        direction = directions[random.randint(0, len(directions)-1)] 
+
+        coordinate = Vector2(0, 0)
+        coordinate.x = self._positionX + direction.x
+        coordinate.y = self._positionY + direction.y
+        
+        #Find a valid cell
+        while(not self.world().isInBounds(coordinate)):
+            direction = directions[random.randint(0, len(directions)-1)] 
+            coordinate.x = self._positionX + direction.x
+            coordinate.y = self._positionY + direction.y
+        
+        return coordinate
+
+        
     def setAction(self, action, thisCollision, otherCollision):
+
 
         if(thisCollision.hasTempAttackStrength):
             action.thisAttackerStrength = thisCollision.tempAttackStrength
@@ -112,6 +136,11 @@ class Organism(abc.ABC):
         else:
             action.otherDefenderStrength = otherCollision.realStrength
 
+        #Immunity
+        if(thisCollision.isImmuneToHogweed and otherCollision.isHogweed):
+            action.thisDefenderStrength = float('inf')
+            thisCollision.isImmortal = True
+
     def killIfStronger(self, inputOrganism, thisCollision, otherCollision):
 
         thisOrganism = self._world.board()[self._positionX][self._positionY]
@@ -129,20 +158,6 @@ class Organism(abc.ABC):
 
             if(otherCollision.killAfterDefeat and not thisCollision.isImmortal):
                 
-                # Message message1 = new Message(), message2 = new Message();
-                # message1.addToList( thisOrganism.getClass().getSimpleName());
-                # message2.addToList( otherOrganism.getClass().getSimpleName());
-
-            
-                # message1.addToList( thisOrganism.getKillMessage());
-                # message2.addToList( otherOrganism.getKillMessage());
-
-                # message1.addToList( otherOrganism.getClass().getSimpleName());
-                # message2.addToList( thisOrganism.getClass().getSimpleName());
-
-
-                # world.manager().pushMessage(message1);
-                # world.manager().pushMessage(message2);
                 self.world().manager().addMessage(thisOrganism.name() + " " + thisOrganism.killMessage()  + " " + otherOrganism.name()  )
                 self.world().manager().addMessage(otherOrganism.name() + " " + otherOrganism.killMessage()  + " " + thisOrganism.name()  )
 
@@ -150,12 +165,7 @@ class Organism(abc.ABC):
                 otherOrganism.die()
                 return
 
-            # Message message = new Message();
-            # message.addToList(thisOrganism.getClass().getSimpleName()); 
-            # message.addToList(thisOrganism.getKillMessage());
-            # message.addToList(otherOrganism.getClass().getSimpleName());
             self.world().manager().addMessage(thisOrganism.name() + " " + thisOrganism.killMessage()  + " " + otherOrganism.name()  )
-            # world.manager().pushMessage(message);
             
             newPosX = otherOrganism.positionX()
             newPosY = otherOrganism.positionY()
@@ -165,36 +175,31 @@ class Organism(abc.ABC):
 
         if(thisCollision.escapeAfterFailedAttack and action.thisAttackerStrength < action.otherDefenderStrength):
 
-            positionX = self.positionX()
-            positionY = self.positionY()
-            
-            # ArrayList <Vector> directions = world.aiDirections();
-            # ArrayList <Vector> emptyCells = new ArrayList<Vector>();
-        
-            # Organism targetOrganism;
-            # Vector coordinate = new Vector(0, 0);
-            # //Find empty cell to escape to
-            # for(int i=0; i < directions.size(); ++i)
-            # {
-            #     coordinate.x = positionX + directions.get(i).x;
-            #     coordinate.y = positionY + directions.get(i).y;
-            #     if(!world.isInBounds(coordinate))
-            #         continue;
-            #     targetOrganism = world.boardCells().get(coordinate.x).get(coordinate.y);
-            #     if(targetOrganism == null)
-            #     {
-            #         Vector newVector = new Vector(coordinate.x, coordinate.y);
-            #         emptyCells.add(newVector);
-            #     } 
-            # }
-            
-            # if(emptyCells.size() == 0)
-            #     return;
-            # Random rand = new Random();
-            # Vector direction = emptyCells.get(rand.nextInt(emptyCells.size()));
-            #TODO
-            
-            #moveOrganism(direction.x, direction.y);
+            from .functions import Vector2
+            directions = self._world.directions()
+            safeDirections = []
+
+            coordinate = Vector2(0,0)
+            for direction in directions:
+                coordinate.x = self._positionX + direction.x
+                coordinate.y = self._positionY + direction.y
+                if(not self._world.isInBounds(coordinate)):
+                    continue
+                target = self._world.board()[coordinate.x][coordinate.y]
+                if(target == None):
+                    safeDirections.append(Vector2(coordinate.x, coordinate.y))
+
+            if(len(safeDirections) == 0):
+                self.world().manager().addMessage(thisOrganism.name() + " escaped from " + otherOrganism.name()  )
+                return
+
+            import random
+            from datetime import datetime
+            random.seed(datetime.now().timestamp())
+
+            self.world().manager().addMessage(thisOrganism.name() + " escaped from " + otherOrganism.name()  )
+            self._move = safeDirections[random.randint(0, len(safeDirections) - 1)]     
+            self.moveOrganism(self._move.x, self._move.y)
             
             return
             
@@ -202,13 +207,9 @@ class Organism(abc.ABC):
 
             if(thisCollision.givesStrength):
                 otherOrganism.strength(otherOrganism.strength() + thisCollision.givenStrength)
-            
-            # Message message = new Message();
-            # message.addToList(otherOrganism.getClass().getSimpleName()); 
-            # message.addToList(otherOrganism.getKillMessage());
-            # message.addToList(thisOrganism.getClass().getSimpleName());
+
+
             self.world().manager().addMessage(otherOrganism.name() + " " + otherOrganism.killMessage()  + " " + thisOrganism.name()  )
-            #world.manager().pushMessage(message);
             
             thisOrganism.die()
         

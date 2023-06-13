@@ -7,6 +7,8 @@ class Belladona(plant.Plant):
         return "B"
     def name(self):
         return "Belladona"
+    def displayColour(self):
+        return (0, 20, 60, 255)
     def collision(self):
         from ..functions import CollisionAction
         action = CollisionAction()

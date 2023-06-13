@@ -7,12 +7,15 @@ class Hogweed(plant.Plant):
         return "H"
     def name(self):
         return "Hogweed"
+    def displayColour(self):
+        return (100, 190, 100, 170)
         
     def collision(self):
         from ..functions import CollisionAction
         action = CollisionAction()
         action.realStrength = self._strength
         action.killAfterDefeat = True
+        action.isHogweed = True
         return action
     
     def action(self):
@@ -34,10 +37,13 @@ class Hogweed(plant.Plant):
                 action = target.collision()
                 
                 if(action.isImmortal):
+                    self.world().manager().addMessage("Hogweed tried but " +  target.name() + " is immortal")
                     continue
                 if(action.isImmuneToHogweed):
+                    self.world().manager().addMessage("Hogweed tried but " + target.name() + " is immune")
                     continue
-                #TODO message
+                self.world().manager().addMessage("Hogweed "  + self.killMessage() + " " + target.name())
                 target.die()
+
         
         self.basicGrowHandle()

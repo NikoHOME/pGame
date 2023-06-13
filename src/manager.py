@@ -25,6 +25,7 @@ class Manager:
         self.editWindow = None
         self.mainWindow = None
         self.drawList = None
+        self.infoWindow = None
         #self.buttonDrawList = None
         self.slider_height = None
         self.slider_width = None
@@ -53,6 +54,8 @@ class Manager:
             dpg.add_key_press_handler(dpg.mvKey_A, callback=self.leftMove)
             dpg.add_key_press_handler(dpg.mvKey_D, callback=self.rightMove)
 
+            dpg.add_key_press_handler(dpg.mvKey_R, callback=self.useAbility)
+
         with dpg.font_registry():
             # first argument ids the path to the .ttf or .otf file
             self.font = dpg.add_font("./src/fonts/JetBrainsMono-Bold.ttf", 15)
@@ -72,6 +75,8 @@ class Manager:
 
     def createWorld(self, width, height):
         self._world = World(width, height, self)
+    def createEmptyWorld(self, width, height):
+        self._world = World(width, height, self, False)
     def world(self):
         return self._world
     
@@ -91,13 +96,13 @@ class Manager:
         self.nextTurnCallback()
     
     def upMove(self):
-        self.baseMove(0, -1)
-    def downMove(self):
-        self.baseMove(0, 1)
-    def leftMove(self):
         self.baseMove(-1, 0)
-    def rightMove(self):
+    def downMove(self):
         self.baseMove(1, 0)
+    def leftMove(self):
+        self.baseMove(0, -1)
+    def rightMove(self):
+        self.baseMove(0, 1)
 
     def addMessage(self, message):
         dpg.add_text(default_value = message, parent = self.messageWindow)
@@ -112,27 +117,63 @@ class Manager:
             return
         self.clearMessages()
         self.nextTurn()
-        #self.world().print()
-        #self.drawWorld()
         self.drawChars()
 
     def create_callback(self):
-        self.createWorld( dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
-        #self.world().print()
-        #dpg.delete_item("Main", children_only=True)
+        if(dpg.get_value("Empty") == False):
+            self.createWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
+        else:
+            self.createEmptyWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
+        self.world().update()
+        self.addPlayerInfoWindow()
         self.addCellButtons()
         self.drawChars()
-        #self.drawWorld()
-        
-        #print(f'World Created, {self.world().width()},{self.world().height()} ')
+
+    def useAbility(self):
+        if(not self._world.playerAlive()):
+            return
+        if(not self._world.playerAbilityAvaible()):
+            return
+        self.world().playerUseAbility()
+        self.world().update()
+        self.updateInfo()
+        self.addMessage("Player used ability")
+
+
+    def saveCallback(self):
+        pass
+
+    def loadCallback(self):
+        with dpg.file_dialog(tag="file_dialog_id", directory_selector=False, width = 600, height = 400):
+            dpg.add_file_extension(".save")
+
+    def updateInfo(self):
+        dpg.configure_item("PlayerStatus", default_value = "Player alive: " + str(self._world.playerAlive()))
+        dpg.configure_item("CanUseAbility", default_value = "Can use ability: " + str(self._world.playerAbilityAvaible()))
+        dpg.configure_item("AbilityActive", default_value = "Ability active: " + str(self._world.playerAbilityOn()))
+
+    def addPlayerInfoWindow(self):
+        if(self.infoWindow != None):
+            return
+        with dpg.window(label="World Info", tag = "Info", no_close = True, width = 300, height = 200, pos = (100, 100)) as self.infoWindow:
+            dpg.add_text("Player alive: " + str(self._world.playerAlive()), tag = "PlayerStatus")
+            dpg.add_text("Can use ability: " + str(self._world.playerAbilityAvaible()), tag = "CanUseAbility")
+            dpg.add_text("Ability active: " + str(self._world.playerAbilityOn()), tag = "AbilityActive")
+            dpg.add_text("Movement: WSAD+QE Next turn: N Ability: R")
+            dpg.bind_item_font(self.editWindow, self.font)
 
     def addEditWindow(self):
-
         with dpg.window(label="Edit window", tag = "Edit", no_close = True,width = 300, height = 200, pos = (100, 100)) as self.editWindow:
             dpg.add_text("Create a new World")
             dpg.add_button(label="Create", callback=self.create_callback)
+            dpg.add_checkbox(label = "Empty World", tag = "Empty", default_value = False)
             self.slider_height = dpg.add_slider_int(label="World height", max_value=30, min_value=5, default_value=5, width = 100)
             self.slider_width = dpg.add_slider_int(label="World width", max_value=30, min_value=5, default_value=5, width = 100)
+
+            with dpg.group(horizontal = True):
+                dpg.add_button(label="Save", callback=self.saveCallback)
+                dpg.add_button(label="Load", callback=self.loadCallback)
+
             dpg.bind_item_font(self.editWindow, self.font)
             #dpg.set_primary_window("Edit", True)
 
@@ -144,8 +185,8 @@ class Manager:
         #    pass
 
     def addMessageWindow(self):
-        viewport_width = dpg.get_viewport_client_width()
-        viewport_height = dpg.get_viewport_client_height()
+        viewport_width = dpg.get_viewport_width()
+        viewport_height = dpg.get_viewport_height()
 
         with dpg.window(tag="Message", no_close = True, width = 300, height = 300, pos = (100, viewport_height - 200)) as self.messageWindow:
             dpg.bind_item_font(self.mainWindow, self.font)
@@ -171,8 +212,8 @@ class Manager:
         mousePos = dpg.get_mouse_pos()
         lis = tag.split("|")
         position = [eval(i) for i in lis]
-        self.choicePosX = position[0]
-        self.choicePosY = position[1]
+        self.choicePosX = position[1]
+        self.choicePosY = position[0]
 
         animalList = ["Fox", "Wolf", "CyberSheep", "Sheep", "Turtle", "Antilope"]
         plantList = ["Grass", "Dandelion", "Guarana", "Hogweed", "Belladona"]
@@ -180,44 +221,48 @@ class Manager:
             animalList.append("Player")
         with dpg.window(label="Edit cell", popup = True, pos = mousePos) as self.popup:
             dpg.bind_item_font(self.popup, self.font)
-            with dpg.group(horizontal=True):
-                dpg.add_text("Add Animal")
-                dpg.add_combo(items = animalList, callback = self.addOrganism, popup_align_left = False, width = 50)
-            with dpg.group(horizontal=True):
-                dpg.add_text("Add Plant")
-                dpg.add_combo(items = plantList, callback = self.addOrganism, popup_align_left = False, width = 50)
-
-            if(self._world.board()[position[0]][position[1]] != None):
+            if(self._world.board()[position[1]][position[0]] != None):
+                organism = self._world.board()[position[1]][position[0]]
+                dpg.add_text(organism.name())
+                dpg.add_text("Strength: " + str(organism.strength()) + " Innitiative: " + str(organism.innitiative()))
                 dpg.add_button(label="Kill Organism", callback=self.killOrganismCallback)
+            else:
+                with dpg.group(horizontal=True):
+                    dpg.add_text("Add Animal")
+                    dpg.add_combo(items = animalList, callback = self.addOrganism, popup_align_left = False, width = 50)
+                with dpg.group(horizontal=True):
+                    dpg.add_text("Add Plant")
+                    dpg.add_combo(items = plantList, callback = self.addOrganism, popup_align_left = False, width = 50)
             
 
     def addCellButtons(self):
         viewport_width = dpg.get_viewport_client_width()
         viewport_height = dpg.get_viewport_client_height()
 
-        size = min(viewport_height / self._world.height(), viewport_width / self._world.width())
-        size = round(size)
+        size = min(viewport_height / self._world.width(), viewport_width / self._world.height())
+        size = round(size) - 5
 
         dpg.delete_item("Main", children_only = True)
         self.drawList = None
 
+        boardEnd = min(viewport_width-200, self._world.width() * size + size)
+
+        dpg.configure_item("Edit", pos = (boardEnd, 100))
+        dpg.configure_item("Message", pos = (boardEnd, viewport_height-400))
+        dpg.configure_item("Info", pos = (boardEnd, viewport_height/2-150))
+
         for x in range(0, self._world.width()):
             for y in range(0, self._world.height()):
-                    dpg.add_button(tag = (str(x) + "|" + str(y)), width = size, height = size, pos = (x * size, y * size), parent = "Main", callback = self.cellButtonCallback)
+                    dpg.add_button(tag = (str(y) + "|" + str(x)), width = size, height = size, pos = (y * size, x * size), parent = "Main", callback = self.cellButtonCallback)
                     #dpg.bind_item_font(str(x) + "|" + str(y), self.scaledFont)
     
     def drawChars(self):
+        self.updateInfo()
         viewport_width = dpg.get_viewport_client_width()
         viewport_height = dpg.get_viewport_client_height()
 
-        size = min(viewport_height / self._world.height(), viewport_width / self._world.width())
-        size = round(size)
-        #with dpg.viewport_drawlist():
-        #    dpg.draw_rectangle((0, 0), (viewport_width, viewport_height), fill=(0, 0, 0, 255), thickness=0, parent = "Main")
-
-        #dpg.configure_item(self.scaledFont, size = size)
-        #self.scaledFont = dpg.add_font("./src/fonts/FreeMonoBoldOblique.otf", size)
-        #dpg.add_font("./src/fonts/FreeMonoBoldOblique.otf", 12)
+        size = min(viewport_height / self._world.width(), viewport_width / self._world.height())
+        size = round(size) - 5
 
         if(self.drawList == None):
             with dpg.drawlist(tag = "MainDraw", parent = "Main", height = viewport_height, width = viewport_width) as self.drawList:
@@ -227,9 +272,12 @@ class Manager:
         for x in range(0, self._world.width()):
             for y in range(0, self._world.height()):
                     if(self._world.board()[x][y] != None):
+                        
+                        displayColor = self._world.board()[x][y].displayColour()
                         #dpg.configure_item(str(x) + "|" + str(y), label=self.world().board()[x][y].displayChar())
-                        drawTag = dpg.draw_text((x * size, y * size), self._world.board()[x][y].displayChar(), color=(255, 255, 255, 255), size = size, parent = "MainDraw")
+                        drawTag = dpg.draw_text((y * size, x * size), self._world.board()[x][y].displayChar(), color = displayColor, size = size, parent = "MainDraw")
                         dpg.bind_item_font(drawTag, self.scaledFont)
+
 
     def nextTurn(self):
         from .functions import QueueInfo
@@ -241,6 +289,11 @@ class Manager:
 
         while not self.turnQueue.empty():
             top = self.turnQueue.get()
-            top.organism.action()
+            if(not top.organism.isDead()):
+                top.organism.action()
+        self.world().nextTurn()
         self._world.update()
+        self.updateInfo()
+
+    
         

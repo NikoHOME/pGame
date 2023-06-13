@@ -51,11 +51,5 @@ class Plant(organism.Organism):
 
         self.reproduce(direction.x, direction.y)
         
-        # Message message = new Message();
-        # message.addToList(getClass().getSimpleName()); 
-        # message.addToList(getBornMessage());
-
-        # world.manager().pushMessage(message);
-        #TODO
 
         return True

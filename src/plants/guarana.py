@@ -7,7 +7,8 @@ class Guarana(plant.Plant):
         return "G"
     def name(self):
         return "Guarana"
-
+    def displayColour(self):
+        return (50, 5, 10, 255)
     def collision(self):
         from ..functions import CollisionAction
         action = CollisionAction()

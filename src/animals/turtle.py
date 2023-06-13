@@ -7,6 +7,8 @@ class Turtle(animal.Animal):
         return "T"
     def name(self):
         return "Turtle"
+    def displayColour(self):
+        return (0, 255, 0, 170)
     def action(self):
         import random
         from datetime import datetime

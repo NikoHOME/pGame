@@ -58,6 +58,7 @@ class CollisionAction:
         self.escapeAfterFailedAttack = False
         self.isImmortal = False
         self.isImmuneToHogweed = False
+        self.isHogweed = False
 
 class AttackAction: 
     def __init__(self):

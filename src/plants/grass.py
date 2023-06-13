@@ -7,3 +7,5 @@ class Grass(plant.Plant):
         return "^"
     def name(self):
         return "Grass"
+    def displayColour(self):
+        return (60, 255, 60, 170)

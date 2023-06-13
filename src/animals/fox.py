@@ -8,6 +8,8 @@ class Fox(animal.Animal):
         return "F"
     def name(self):
         return "Fox"
+    def displayColour(self):
+        return (255, 140, 0, 255)
 
     def action(self):
         from ..functions import Vector2
