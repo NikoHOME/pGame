@@ -1,4 +1,5 @@
 from .manager import Manager
 
-nmanager = Manager()
+if __name__ == "__main__":
+    Manager()
 

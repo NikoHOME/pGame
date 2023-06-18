@@ -19,7 +19,8 @@ from .plants.guarana import Guarana
 
 import random
 
-class World:
+import abc
+class World(abc.ABC):
     index = 0
     def __init__(self, width, height, manager, populateFlag = True):
         self._height = height
@@ -27,17 +28,6 @@ class World:
         self._manager = manager
         self._board = [[ None for y in range(height)] for x in range(width)]
 
-        self._directions = []
-        self._directions.append(Vector2(0, -1))
-        self._directions.append(Vector2(0, 1))
-        self._directions.append(Vector2(1, 0))
-        self._directions.append(Vector2(-1, 0))
-
-        self._directionsDiagonal = []
-        self._directionsDiagonal.append(Vector2(-1, -1))
-        self._directionsDiagonal.append(Vector2(-1, 1))
-        self._directionsDiagonal.append(Vector2(1, -1))
-        self._directionsDiagonal.append(Vector2(1, 1))
 
         self._player = None
         self._playerAlive = True
@@ -49,6 +39,35 @@ class World:
         self._turn = 0
         if(populateFlag):
             self.populate_world()
+
+    def copyWorldData(self):
+        from .functions import WorldData
+        
+        data = WorldData()
+
+        data.playerAlive = self._playerAlive
+        data.playerAbilityOn = self._playerAbilityOn
+        data.playerAbilityAvaible = self._playerAbilityAvaible
+
+        data.playerAbilityTimeUsed = self._playerAbilityTimeUsed
+        data.turn = self._turn
+
+        data.width = self._width
+        data.height = self._height
+        data.isHex = self.isHex
+
+        data.board = [[ None for y in range(data.height)] for x in range(data.width)]
+
+        organisms = 0
+        for x in range(data.width):
+            for y in range(data.height):
+                if(self._board[x][y] != None):
+                    data.board[x][y] = self._board[x][y]
+                    organisms += 1
+        data.organisms = organisms        
+        return data
+
+
     def playerAbilityTimeLeft(self):
         if(self._playerAbilityTimeUsed + self._playerAbilityDuration < self._turn):
             return 1
@@ -117,8 +136,10 @@ class World:
         self._playerAbilityOn = True
         self._playerAbilityTimeUsed = self._turn
         self._playerAbilityAvaible = False
+
     def nextTurn(self):
         self._turn +=1
+
     def update(self):
         if(self._player != None):
             if(self._board[self._player.positionX()][self._player.positionY()] != self._player):

@@ -1,5 +1,6 @@
 import dearpygui.dearpygui as dpg
-from .world import World
+from .world4 import World4
+from .world6 import World6
 
 from .animals.sheep import Sheep
 from .animals.wolf import Wolf
@@ -26,6 +27,7 @@ class Manager:
         self.mainWindow = None
         self.drawList = None
         self.infoWindow = None
+        self.inputRegistry = None
         #self.buttonDrawList = None
         self.slider_height = None
         self.slider_width = None
@@ -35,6 +37,8 @@ class Manager:
         self.choicePosX = 0
         self.choicePosY = 0
         self.popup = None
+        self.saveWindow = None
+        self.loadWindow = None
 
         self.font = None
         self.scaledFont = None
@@ -47,12 +51,15 @@ class Manager:
         dpg.create_viewport()
         dpg.setup_dearpygui()
 
-        with dpg.handler_registry():
+        with dpg.handler_registry() as self.inputRegistry:
             dpg.add_key_press_handler(dpg.mvKey_N, callback=self.nextTurnCallback)
             dpg.add_key_press_handler(dpg.mvKey_W, callback=self.upMove)
             dpg.add_key_press_handler(dpg.mvKey_S, callback=self.downMove)
             dpg.add_key_press_handler(dpg.mvKey_A, callback=self.leftMove)
             dpg.add_key_press_handler(dpg.mvKey_D, callback=self.rightMove)
+
+            dpg.add_key_press_handler(dpg.mvKey_Q, callback=self.leftDownMove)
+            dpg.add_key_press_handler(dpg.mvKey_E, callback=self.rightUpMove)
 
             dpg.add_key_press_handler(dpg.mvKey_R, callback=self.useAbility)
 
@@ -74,14 +81,25 @@ class Manager:
         dpg.destroy_context()
 
     def createWorld(self, width, height):
-        self._world = World(width, height, self)
+        self._world = World4(width, height, self)
     def createEmptyWorld(self, width, height):
-        self._world = World(width, height, self, False)
+        self._world = World4(width, height, self, False)
+    def createHexWorld(self, width, height):
+        self._world = World6(width, height, self)
+    def createEmptyHexWorld(self, width, height):
+        self._world = World6(width, height, self, False)
     def world(self):
         return self._world
     
     def baseMove(self, x, y):
         from .functions import Vector2
+
+        if(self.loadWindow != None or self.saveWindow != None):
+            return
+        # else:
+        #     print(self.loadWindow)
+        #     print(self.saveWindow)
+
         player = self._world.player()
         if(player == None):
             return
@@ -100,9 +118,18 @@ class Manager:
     def downMove(self):
         self.baseMove(1, 0)
     def leftMove(self):
-        self.baseMove(0, -1)
+        if(self.world().isHex == True):
+            self.baseMove(1, -1)
+        else:
+            self.baseMove(0, -1)
     def rightMove(self):
         self.baseMove(0, 1)
+    def rightUpMove(self):
+        if(self.world().isHex == True):
+            self.baseMove(-1, 1)
+    def leftDownMove(self):
+        if(self.world().isHex == True):
+            self.baseMove(0, -1)
 
     def addMessage(self, message):
         dpg.add_text(default_value = message, parent = self.messageWindow)
@@ -115,21 +142,33 @@ class Manager:
     def nextTurnCallback(self):
         if(self._world == None):
             return
+        if(self.loadWindow != None or self.saveWindow != None):
+            return
         self.clearMessages()
         self.nextTurn()
         self.drawChars()
 
     def create_callback(self):
-        if(dpg.get_value("Empty") == False):
-            self.createWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
+        isHex = dpg.get_value("Hex")
+        isEmpty = dpg.get_value("Empty")
+        if(isEmpty == False):
+            if(isHex == False):
+                self.createWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
+            else:
+                self.createHexWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
         else:
-            self.createEmptyWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
+            if(isHex == False):
+                self.createEmptyWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
+            else:
+                self.createEmptyHexWorld(dpg.get_value(self.slider_height), dpg.get_value(self.slider_width))
         self.world().update()
         self.addPlayerInfoWindow()
         self.addCellButtons()
         self.drawChars()
 
     def useAbility(self):
+        if(self.loadWindow != None or self.saveWindow != None):
+            return
         if(not self._world.playerAlive()):
             return
         if(not self._world.playerAbilityAvaible()):
@@ -140,11 +179,115 @@ class Manager:
         self.addMessage("Player used ability")
 
 
+    def saveButtonCallback(self):
+        
+        dpg.configure_item(self.saveWindow, show=False)
+        saveName = dpg.get_value(self.saveName)
+        saveName = saveName.strip()
+        saveName = saveName.replace(" ", "")
+        if(saveName == ""):
+            with dpg.window(label="Error", show = True):
+                dpg.add_text("Error: Invalid name try again")
+        fileName = "save/" + saveName + ".save"
+        file = open(fileName, "w")
+
+        data = self.world().copyWorldData()
+
+        file.write(str(data.height) + " ")
+        file.write(str(data.width) + " ")
+        file.write(str(int(data.isHex)) + "\n")
+
+        file.write(str(int(data.playerAlive)) + " ")
+        file.write(str(int(data.playerAbilityOn)) + " ")
+        file.write(str(int(data.playerAbilityAvaible)) + " ")
+        file.write(str(data.playerAbilityTimeUsed) + " ")
+        file.write(str(data.turn) + " ")
+        file.write(str(data.organisms) + "\n")
+
+        for x in range(data.width):
+            for y in range(data.height):
+                if data.board[x][y] != None:
+                    organism = data.board[x][y]
+                    file.write(str(organism.__class__.__name__) + '\n')
+                    file.write(str(organism.positionX()) + " " + str(organism.positionY()) + " ")
+                    file.write(str(organism.strength()) + " " + str(organism.innitiative()) + '\n')
+        file.close()
+        self.saveWindow = None
+
+    def loadButtonCallback(self, tag, data):
+        dpg.configure_item(self.loadWindow, show=False)
+        path = data['file_path_name']
+        if not ".save" in path:
+            with dpg.window(label="Error", show = True):
+                dpg.add_text("Error: Invalid file try again")
+            return
+
+        
+        from .functions import WorldData
+
+        file = open(path, "r")
+        
+        line = file.readline()
+        line = line.strip()
+        line = line.split(" ")
+
+        isHex = bool(int(line[2]))
+
+        if(not isHex):
+            self.createEmptyWorld(int(line[1]), int(line[0]))
+        else:
+            self.createEmptyHexWorld(int(line[1]), int(line[0]))
+        line = file.readline()
+        line = line.strip()
+        line = line.split(" ")
+
+        self.world()._playerAlive = bool(line[0])
+        self.world()._playerAbilityOn = bool(line[1])
+        self.world()._playerAbilityAvaible = bool(line[2])
+        self.world()._playerAbilityTimeUsed = int(line[3])
+        self.world()._turn = int(line[4])
+        organisms = int(line[5])
+        
+
+        
+        
+
+        from .functions import str_to_class
+
+        for i in range(organisms):
+            name = file.readline().strip()
+            stats = file.readline().strip().split(" ")
+            className = str_to_class(name)
+            organism = className(int(stats[0]), int(stats[1]))
+            organism.strength(int(stats[2]))
+            organism.innitiative(int(stats[3]))
+            self.world().add_organism(organism)
+            if(name == "Player"):
+                self.world()._player = organism
+
+        file.close()
+        self.loadWindow = None
+        self.world().update()
+        self.addPlayerInfoWindow()
+        self.addCellButtons()
+        self.drawChars()
+        
+
+    def enableInput(self):
+        self.saveWindow = None
+        self.loadWindow = None
+
+
     def saveCallback(self):
-        pass
+        if(self.world() == None):
+            return
+        with dpg.window(label="Save to file", width = 600, on_close = self.enableInput) as self.saveWindow:
+            self.saveName = dpg.add_input_text(label = "Save filename")
+            dpg.add_button(label="Confirm", callback=self.saveButtonCallback)
+
 
     def loadCallback(self):
-        with dpg.file_dialog(tag="file_dialog_id", directory_selector=False, width = 600, height = 400):
+        with dpg.file_dialog(default_path = "save", directory_selector=False, width = 600, height = 400, callback = self.loadButtonCallback, on_close = self.enableInput) as self.loadWindow:
             dpg.add_file_extension(".save")
 
     def updateInfo(self):
@@ -166,7 +309,9 @@ class Manager:
         with dpg.window(label="Edit window", tag = "Edit", no_close = True,width = 300, height = 200, pos = (100, 100)) as self.editWindow:
             dpg.add_text("Create a new World")
             dpg.add_button(label="Create", callback=self.create_callback)
-            dpg.add_checkbox(label = "Empty World", tag = "Empty", default_value = False)
+            with dpg.group(horizontal = True):
+                dpg.add_checkbox(label = "Empty World", tag = "Empty", default_value = False)
+                dpg.add_checkbox(label = "Hex World", tag = "Hex", default_value = False)
             self.slider_height = dpg.add_slider_int(label="World height", max_value=30, min_value=5, default_value=5, width = 100)
             self.slider_width = dpg.add_slider_int(label="World width", max_value=30, min_value=5, default_value=5, width = 100)
 
@@ -242,6 +387,10 @@ class Manager:
         size = min(viewport_height / self._world.width(), viewport_width / self._world.height())
         size = round(size) - 5
 
+        if(self.world().isHex):
+            size /= 3
+            size *= 2
+
         dpg.delete_item("Main", children_only = True)
         self.drawList = None
 
@@ -253,7 +402,10 @@ class Manager:
 
         for x in range(0, self._world.width()):
             for y in range(0, self._world.height()):
-                    dpg.add_button(tag = (str(y) + "|" + str(x)), width = size, height = size, pos = (y * size, x * size), parent = "Main", callback = self.cellButtonCallback)
+                    if(not self.world().isHex):
+                        dpg.add_button(tag = (str(y) + "|" + str(x)), width = size, height = size, pos = (y * size, x * size), parent = "Main", callback = self.cellButtonCallback)
+                    else:
+                        dpg.add_button(tag = (str(y) + "|" + str(x)), width = size, height = size, pos = (y * size, x * size + (y * size / 2)), parent = "Main", callback = self.cellButtonCallback)
                     #dpg.bind_item_font(str(x) + "|" + str(y), self.scaledFont)
     
     def drawChars(self):
@@ -264,6 +416,10 @@ class Manager:
         size = min(viewport_height / self._world.width(), viewport_width / self._world.height())
         size = round(size) - 5
 
+        if(self.world().isHex):
+            size /= 3
+            size *= 2
+
         if(self.drawList == None):
             with dpg.drawlist(tag = "MainDraw", parent = "Main", height = viewport_height, width = viewport_width) as self.drawList:
                 dpg.bind_item_font(self.drawList, self.scaledFont)
@@ -272,10 +428,13 @@ class Manager:
         for x in range(0, self._world.width()):
             for y in range(0, self._world.height()):
                     if(self._world.board()[x][y] != None):
-                        
                         displayColor = self._world.board()[x][y].displayColour()
                         #dpg.configure_item(str(x) + "|" + str(y), label=self.world().board()[x][y].displayChar())
-                        drawTag = dpg.draw_text((y * size, x * size), self._world.board()[x][y].displayChar(), color = displayColor, size = size, parent = "MainDraw")
+                        if(not self.world().isHex):
+                            position = (y * size, x * size)
+                        else:
+                            position = (y * size, x * size + (y * size / 2))
+                        drawTag = dpg.draw_text(position, self._world.board()[x][y].displayChar(), color = displayColor, size = size, parent = "MainDraw")
                         dpg.bind_item_font(drawTag, self.scaledFont)
 
 

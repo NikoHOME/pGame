@@ -29,8 +29,11 @@ class Organism(abc.ABC):
             self._strength = newValue
         else:
             return self._strength
-    def innitiative(self):
-        return self._innitiative
+    def innitiative(self, newValue = None):
+        if(newValue != None):
+            self._innitiative = newValue
+        else:
+            return self._index
     def index(self, newValue = None):
         if(newValue != None):
             self._index = newValue

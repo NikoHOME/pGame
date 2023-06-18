@@ -68,3 +68,21 @@ class AttackAction:
         self.otherDefenderStrength = -1
 
 
+class WorldData:
+    def __init__(self):
+
+        self.playerAlive = False
+        self.playerAbilityOn = False
+        self.playerAbilityAvaible = False
+        self.playerAbilityTimeUsed = 0
+
+        self.turn = 0
+
+        self.height = 0
+        self.width = 0
+        self.isHex = False
+
+        self.board = None
+        self.organisms = 0
+
+

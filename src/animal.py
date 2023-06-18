@@ -2,6 +2,7 @@ from .organism import Organism
 
 
 class Animal(Organism):
+    
     def __init__(self, positionX, positionY, strength, innitiative):
         super(Animal, self).__init__(positionX, positionY, strength, innitiative)
     def reproduceMessage(self):
